@@ -1,0 +1,104 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    {% if message %}
+        <div class="alert alert-warning" role="alert">{{ message }}</div>
+    {% endif %}
+    {% if listing.winner == request.user %}
+    <div class="alert alert-success" role="alert">Congratulations! You've won this auction.</div>
+    {% endif %}
+
+    <form class="form-inline" action="{% url 'edit_watchlist' listing.title %}" method="post">
+        {% csrf_token %}
+        {% if logged_in %}
+            <button type="submit" class="btn btn-outline-">
+                {% if watchlisted %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#FF0000" class="bi bi-heart" viewBox="0 0 16 16">
+                        <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
+                    </svg>
+                    <span style="color: #FF0000">Watchlisted!</span>
+                {% else %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#D3D3D3" class="bi bi-heart" viewBox="0 0 16 16">
+                        <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
+                    </svg>                   
+                {% endif %}
+            </button>
+        {% endif %}
+        <h2>Listing: {{ listing.title }}</h2>
+    </form>
+
+
+
+    <div class="container-fluid">
+        {% if listing.image_url %}
+            <a href="{{ listing.image_url }}">
+                <img class="listing_img" src="{{ listing.image_url }}" alt="Image of {{ listing.title }}">
+            </a>
+        {% endif %}
+    </div>
+    <br>
+    <p>Description: {{ listing.description}}</p>
+    {% if not listing.active %}
+        <small class="text-muted">This listing has closed.</small>
+        <h4>Sold for:</h4>
+    {% endif %}
+    {% if not listing.highest_bid %}
+        <h3>${{ listing.starting_bid }}</h3>
+    {% else %}
+        <h3>${{ listing.highest_bid }}</h3>
+    {% endif %}
+    {% if listing.active %}
+        {% if logged_in %}
+            <form action="{% url 'listing' listing.title %}" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <small class="form-text text-muted">
+                        {{ bids_count }} bid(s) so far.
+                        {% if highest_bid.user == request.user %}
+                            Your bid is currently the highest bid.
+                        {% endif %}
+                    </small>
+                    <input name="bid_quote" type="number" class="form-control" min="{{ minimum_bid }}" max="99999999.99" step=".01" placeholder="Bid">
+                </div>
+                <button type="submit" class="btn btn-primary">Place Bid</button>
+            </form>
+        {% else %}
+            <a href="{% url 'login' %}">Log in</a><span class="text-muted"> to bid!</span>
+            <br>
+        {% endif %}
+        {% if creator %}
+            <form action="{% url 'close_listing' listing.title %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger" style="margin-top: 5px">Close Listing</button>
+            </form>
+        {% endif %}
+    {% endif %}
+
+    <br>
+    <h4>Details</h4>
+    <ul>
+        <li>Listed by: {{ listing.created_user.username }}</li>
+        <li>Category: {{ listing.category }}</li>
+    </ul>
+    <br>
+    <h4>Comments</h4>
+    {% for comment in comments %}
+        <div class="card" style="width: 60rem; border: none;">
+            <div class="card-body" style="padding: 5px">
+                <h6 class="card-title">{{ comment.created_user.username}} &emsp; <small class="text-muted">{{ comment.created_date }}</small></h6> 
+                <p class="card-text">{{ comment.comment }}</p>
+            </div>
+        </div>
+        <hr/>
+    {% endfor %}
+    {% if logged_in %}
+        <form action="{% url 'add_comment' listing.title %}" method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <textarea class="form-control" rows="3" name="comment" placeholder="Type your comment here"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Comment</button>
+        </form>
+    {% endif %}
+
+{% endblock %}
